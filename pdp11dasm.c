@@ -4,7 +4,11 @@
  * Jeffery L. Post
  * theposts@pacbell.net
  *
- * Version 0.0.3 - 02/01/04
+ * Support of bin files (option -b) and new instructions by
+ * Stanislav I. Maslovski
+ * stanislav.maslovski@gmail.com
+ *
+ * Version 0.0.4 - 10 Nov 2019.
  *
  * If you find bugs, please notify the author at the above email address.
  * [TODO] The decoding of floating point opcodes is not correct.
@@ -29,6 +33,7 @@
 #include	<stdlib.h>
 #include	<ctype.h>
 #include	<string.h>
+#include	<malloc.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
 
@@ -93,10 +98,12 @@ FILE	*ctlfp = NULL;				// control file
 FILE	*disFile = NULL;			// disassembled file
 
 struct stat	fstatus;
+int	base = 0;					// base loading address, word-aligned
 int	pc;							// current program counter
 int	breakLine;					// if true, add a blank comment line to output
 word	*program;					// the program data
 byte	*flags;						// disassembly flags from the control file
+bool	binfile = FALSE;			// bin file format flag
 
 //////////////////////////////////
 //
@@ -132,6 +139,9 @@ int main(int argc, char *argv[])
 
 			chr = toupper(*text);
 
+			if (chr == 'B')		// bin file format
+				binfile = TRUE;
+
 			if (chr == 'V')		// version
 			{
 				printf("\npdp11dasm version %d.%d.%d\n\n", VERSION, MAJOR_REV, MINOR_REV);
@@ -165,6 +175,31 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	fp = fopen(pdpFileName, "rb");		// open file to be disassembled
+
+	if (!fp)
+	{
+		printf("Can't open file '%s'\n", pdpFileName);
+		free(program);
+		free(flags);
+
+		return -1;
+	}
+
+	if (binfile)	// set the base address from the bin header, skip header
+	{
+		byte b[2];
+		fread(&b, 1, 2, fp);
+		base = b[0] + 256*b[1];
+		fseek(fp, 4, SEEK_SET);
+		max -= 4;
+	}
+
+	fread(program, sizeof(byte), max, fp);
+	fclose(fp);
+
+	program -= base/2;	// points BEFORE the actual data!
+
 	strcpy(disFileName, pdpFileName);
 	strcat(disFileName, ".das");
 	strcpy(ctlFileName, pdpFileName);
@@ -179,14 +214,16 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	for (i=0; i < max / 2; i++)
+	flags -= base;	// points BEFORE the actual data!
+
+	for (i = base; i < base + max/2; i++)
 		flags[i] = CTL_NONE;
 
 	if (ctlfp)		// read control file and set program flags
 	{
 		while (!feof(ctlfp))
 		{
-			start = stop = 0;
+			start = stop = base;
 			temp[0] = '\0';
 
 			if (fgets(temp, 127, ctlfp))
@@ -217,7 +254,7 @@ int main(int argc, char *argv[])
 				else if (func == '-' && !stop)
 					stop = start;
 
-				if (start < max && stop < max)
+				if (start < base + max && stop < base + max)
 				{
 					switch (toupper(temp[0]))
 					{
@@ -253,20 +290,6 @@ int main(int argc, char *argv[])
 		fclose(ctlfp);
 	}
 
-	fp = fopen(pdpFileName, "rb");		// open file to be disassembled
-
-	if (!fp)
-	{
-		printf("Can't open file '%s'\n", pdpFileName);
-		free(program);
-		free(flags);
-
-		return -1;
-	}
-
-	fread(program, sizeof(byte), max, fp);
-	fclose(fp);
-
 	disFile = fopen(disFileName, "w");	// open output file
 
 	if (!disFile)
@@ -283,7 +306,7 @@ int main(int argc, char *argv[])
 	fprintf(disFile, ";\n; pdp11dasm version %d.%d.%d\n; disassembly of %s\n;",
 		VERSION, MAJOR_REV, MINOR_REV, pdpFileName);
 
-	for (pc=0; pc<max; )			// do the disassembly
+	for (pc = base/2; pc < base/2 + max; )			// do the disassembly
 	{
 		pc = decode(pc);
 	}
@@ -301,6 +324,7 @@ void usage(void)
 			"'file' is the PDP-11 binary file to disassemble.\n"
 			"Output will be written to 'file.das'.\n"
 			"Options:\n"
+			"  -b --bin       Treat file as having a bin headear.\n"
 			"  -v --version   Show version and exit.\n"
 			"  -h --help      Display this message and exit.\n\n");
 }
@@ -1174,8 +1198,7 @@ int group8(int adrs)
 					break;
 
 				case 4:
-					invalid();
-					skipOperand = TRUE;
+					sprintf(outLine, "\tmtps\t");
 					break;
 
 				case 5:
@@ -1187,8 +1210,7 @@ int group8(int adrs)
 					break;
 
 				case 7:
-					invalid();
-					skipOperand = TRUE;
+					sprintf(outLine, "\tmfps\t");
 					break;
 			}
 
