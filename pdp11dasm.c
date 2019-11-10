@@ -46,7 +46,7 @@
 
 #define	VERSION			0
 #define	MAJOR_REV		0
-#define	MINOR_REV		3
+#define	MINOR_REV		4
 
 #define	byte				unsigned char
 #define	word				unsigned short
