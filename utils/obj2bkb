@@ -170,7 +170,7 @@ BEGIN { unshift(@INC, $FindBin::Bin);
 # external local modules
 
 # generic defaults
-my $VERSION = 'v0.1 ('; # version of code
+my $VERSION = 'v0.1'; # version of code
 my $HELP = 0; # set to 1 for man page output
 my $DEBUG = 0; # set to 1 for debug messages
 my $VERBOSE = 0; # set to 1 for verbose messages
