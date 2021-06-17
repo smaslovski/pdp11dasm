@@ -1060,10 +1060,8 @@ int group7(int adrs)
 			break;
 
 		case 4:		// xor
-			sprintf(outLine, "\txor\t");
+			sprintf(outLine, "\txor\tr%d,", reg);
 			adrs = doOperand(adrs, program[adrs] & MODEREG_MASK);
-			sprintf(temp, ",r%d", reg);
-			strcat(outLine, temp);
 			break;
 
 		case 5:		// fadd, fskub, fmul, fdiv, and unimplemented
