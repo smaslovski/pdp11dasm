@@ -609,7 +609,7 @@ void invalid(int opcode)
 
 int jsr(int adrs)
 {
-	int	reg;
+	int	reg, mode;
 
 	reg = (program[adrs] >> 6) & 7;
 	if (reg != 7) {
@@ -618,7 +618,13 @@ int jsr(int adrs)
 	else {
 		sprintf(outLine, "\tcall\t");
 	}
-	adrs = doOperand(adrs, program[adrs] & MODEREG_MASK);
+
+	mode = (program[adrs] >> 3) & 7;
+	if (mode != 0)
+	    adrs = doOperand(adrs, program[adrs] & MODEREG_MASK);
+	else
+	    invalid(program[adrs]);
+
 	return adrs;
 }
 
@@ -643,7 +649,7 @@ void doOffset(int adrs, int offset)
 int misc0(int adrs)
 {
 	int	code;
-	int	reg;
+	int	reg, mode;
 
 	code = (program[adrs] >> 6) & 7;
 
@@ -696,9 +702,15 @@ int misc0(int adrs)
 			break;
 
 		case 1:		// jmp
-			sprintf(outLine, "\tjmp\t");
-			adrs = doOperand(adrs, program[adrs] & MODEREG_MASK);
-			breakLine = TRUE;
+			mode = (program[adrs] >> 3) & 7;
+			if (mode != 0)
+			{
+			    sprintf(outLine, "\tjmp\t");
+			    adrs = doOperand(adrs, program[adrs] & MODEREG_MASK);
+			    breakLine = TRUE;
+			}
+			else
+			    invalid(program[adrs]);
 			break;
 
 		case 2:		// rts, spl, nop, cond codes & unimplemented
