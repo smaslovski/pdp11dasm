@@ -544,7 +544,7 @@ int decode(int adrs)
 			break;
 
 		default:
-			printf("\nUnknown flag 0x%02x for code %06o at address %06o\n", flags[adrs * 2], program[adrs], adrs);
+			printf("\nUnknown flag 0x%02x for code %06o at address %06o\n", flags[adrs * 2], program[adrs], adrs * 2);
 			adrs++;
 			break;
 	}
