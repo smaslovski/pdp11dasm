@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
 
 	flags -= base;	// points BEFORE the actual data!
 
-	for (i = base; i < base + max/2; i++)
+	for (i = base; i < base + max; i++)
 		flags[i] = CTL_NONE;
 
 	if (ctlfp)		// read control file and set program flags
