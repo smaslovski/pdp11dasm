@@ -117,6 +117,8 @@ int main(int argc, char *argv[])
 	word	start, stop;
 	char	*text, func, chr;
 
+	int	ret = 0;	// error code
+
 	if (argc < 2)
 	{
 		usage();
@@ -180,10 +182,8 @@ int main(int argc, char *argv[])
 	if (!fp)
 	{
 		printf("Can't open file '%s'\n", pdpFileName);
-		free(program);
-		free(flags);
-
-		return -1;
+		ret = -1;
+		goto exit_;
 	}
 
 	if (binfile)	// set the base address from the bin header, skip header
@@ -295,10 +295,8 @@ int main(int argc, char *argv[])
 	if (!disFile)
 	{
 		printf("Can't open output file\n");
-		free(program);
-		free(flags);
-
-		return -1;
+		ret = -1;
+		goto exit;
 	}
 
 	max /= 2;
@@ -313,9 +311,13 @@ int main(int argc, char *argv[])
 
 	fprintf(disFile, "\n");
 	fclose(disFile);
-	free(program);
+exit:
+	flags += base;		// restore the original pointer
 	free(flags);
-	return 0;
+exit_:
+	program += base/2;	// restore the original pointer
+	free(program);
+	return ret;
 }								//  End of Main
 
 void usage(void)
@@ -542,7 +544,7 @@ int decode(int adrs)
 			break;
 
 		default:
-			printf("\nUnknown code 0x%02x at address %06o\n", flags[adrs], adrs);
+			printf("\nUnknown flag 0x%02x for code %06o at address %06o\n", flags[adrs * 2], program[adrs], adrs);
 			adrs++;
 			break;
 	}
