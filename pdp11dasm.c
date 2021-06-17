@@ -600,9 +600,9 @@ int decode(int adrs)
 
 // Invalid opcode
 
-void invalid(void)
+void invalid(int opcode)
 {
-	sprintf(outLine, "\tinvalid opcode");
+	sprintf(outLine, "\t.word\t%06o", opcode);
 }
 
 // jsr opcodes
@@ -690,7 +690,7 @@ int misc0(int adrs)
 					break;
 
 				default:
-					invalid();
+					invalid(program[adrs]);
 					break;
 			}
 			break;
@@ -714,7 +714,7 @@ int misc0(int adrs)
 				breakLine = TRUE;
 			}
 			else if (program[adrs] < 000230)
-				invalid();
+				invalid(program[adrs]);
 			else if (program[adrs] < 000240)		// spl
 				sprintf(outLine, "\tspl\t%d", program[adrs] & 7);
 			else
@@ -764,7 +764,7 @@ int misc0(int adrs)
 						break;
 
 					default:
-						invalid();
+						invalid(program[adrs]);
 						break;
 				}
 			}
@@ -917,7 +917,7 @@ int group0(int adrs)
 			break;
 
 		case 7:		// invalid opcodes
-			invalid();
+			invalid(program[adrs]);
 			break;
 	}
 
@@ -1056,7 +1056,7 @@ int group7(int adrs)
 
 		case 5:		// fadd, fskub, fmul, fdiv, and unimplemented
 			if (program[adrs] >= 075040)
-				invalid();
+				invalid(program[adrs]);
 			else
 			{
 				code = (program[adrs] >> 3) & 3;
@@ -1083,7 +1083,7 @@ int group7(int adrs)
 			break;
 
 		case 6:		// unimplemented
-			invalid();
+			invalid(program[adrs]);
 			break;
 
 		case 7:		// sob
@@ -1233,7 +1233,7 @@ int group8(int adrs)
 			break;
 
 		case 7:		// invalid opcodes
-			invalid();
+			invalid(program[adrs]);
 			break;
 	}
 
@@ -1392,7 +1392,7 @@ int groupf(int adrs)
 					switch (code)
 					{
 						case 0:
-							invalid();
+							invalid(program[adrs]);
 							break;
 
 						case 1:
